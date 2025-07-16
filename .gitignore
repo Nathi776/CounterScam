@@ -1,0 +1,13 @@
+# Ignore Python virtual environment
+venv/
+
+# Ignore React Native dependencies
+node_modules/
+
+# React Native build files
+.expo/
+.expo-shared/
+
+# Python cache
+__pycache__/
+*.pyc
