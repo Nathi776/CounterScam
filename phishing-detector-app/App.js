@@ -1,34 +1,44 @@
-import axios from 'axios';
-import React, { useState} from 'react';
-import { StyleSheet, Text, View, TextInput, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { Text, View, TextInput, ActivityIndicator } from 'react-native';
+import { checkUrl, checkMessage } from './api';
+import styles from './styles';
+import CustomButton from './components/CustomButton';
+import ModalBox from './components/ModalBox';
 
 export default function App() {
   const [input, setInput] = useState('');
-  const [type, setType] = useState('url');
+  const [mode, setMode] = useState('url');
+  const [result, setResult] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [popupVisible, setPopupVisible] = useState(false);
 
-  const checkContent = async () => {
-    if (input){
-      Alert.alert("Input required", "Please enter a URL or message to check.");
+  const handleCheck = async () => {
+    if (!input) {
+      setResult('Please enter a value to check.');
+      setPopupVisible(true);
       return;
     }
 
+    setLoading(true);
+
     try {
-      const endpoint = type === 'url' ? 'check-url' : 'check-message';
-      const data = type === 'url' ? { url: input } : { message: input };
+      const response = mode === 'url'
+        ? await checkUrl(input)
+        : await checkMessage(input);
 
-      const response = await axios.post(
-        `http://192.168.1.10:8000${endpoint}`,
-        data
-      );
-
-      const flagged = response.data.flagged ? ' Suspicious!' : ' Safe';
+      const flagged = response.data.flagged;
       const reason = response.data.reason;
 
-      Alert.alert(flagged, reason);
+      setResult(flagged
+        ? `⚠️ Suspicious Content\n\n${reason}`
+        : `✅ Safe Content\n\n${reason}`);
 
-    }catch (error) {
-      Alert.alert("Error", "Failed to connect to backend.");
+    } catch (error) {
       console.error(error);
+      setResult('❌ Unable to connect to backend.');
+    } finally {
+      setLoading(false);
+      setPopupVisible(true);
     }
   };
 
@@ -36,38 +46,31 @@ export default function App() {
     <View style={styles.container}>
       <Text style={styles.heading}>Phishing Detector</Text>
 
-      <Button title={`Switch to ${type === 'url' ? 'Message' : 'URL'} Mode`} onPress={() => setType(type === 'url' ? 'message' : 'url')} />
+      <CustomButton
+        title={`Switch to ${mode === 'url' ? 'Message' : 'URL'} Mode`}
+        onPress={() => setMode(mode === 'url' ? 'message' : 'url')}
+        disabled={loading}
+      />
 
       <TextInput
         style={styles.input}
-        placeholder={type === 'url' ? 'Enter URL' : 'Enter Message'}
+        placeholder={mode === 'url' ? 'Enter URL' : 'Enter Message'}
         value={input}
         onChangeText={setInput}
+        editable={!loading}
       />
 
-      <Button title="Check" onPress={checkContent} />
+      {loading ? (
+        <ActivityIndicator size="large" />
+      ) : (
+        <CustomButton title="Check" onPress={handleCheck} />
+      )}
+
+      <ModalBox
+        visible={popupVisible}
+        message={result}
+        onClose={() => setPopupVisible(false)}
+      />
     </View>
   );
-
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    borderWidth: 1, 
-    borderColor: '#ccc', 
-    padding: 10, 
-    marginVertical: 20, 
-    borderRadius: 5,
-  },
-});
