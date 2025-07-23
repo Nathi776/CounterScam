@@ -87,6 +87,31 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.small,
     fontWeight: '600',
   },
+
+  subheading: {
+    fontSize: 16,
+    marginVertical: 10,
+    textAlign: 'center',
+    color: '#555',
+  },
+
+  primaryButton: {
+    backgroundColor: '#007bff',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    marginVertical: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  
 });
 
 export default styles;
