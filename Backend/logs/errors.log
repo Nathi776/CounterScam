@@ -1,0 +1,22 @@
+2025-10-08 23:37:05,828 ERROR: Failed to load ML model/vectorizer: [Errno 2] No such file or directory: 'C:\\Users\\Prince\\CounterScam\\Backend\\phishing_model.pkl'
+2025-10-08 23:38:41,113 ERROR: Failed to load ML model/vectorizer: No module named 'sklearn'
+2026-02-06 15:11:57,675 ERROR: Database error: cannot access local variable 'domain' where it is not associated with a value
+2026-02-06 15:12:57,508 ERROR: Database error: cannot access local variable 'domain' where it is not associated with a value
+2026-02-06 15:18:31,156 ERROR: Database error: cannot access local variable 'domain' where it is not associated with a value
+2026-02-08 19:08:07,105 ERROR: Database error: name 'BLACKLIST_DOMAINS' is not defined
+2026-02-08 19:55:40,136 ERROR: Database error: name 'BLACKLIST_DOMAINS' is not defined
+2026-02-18 12:35:52,433 ERROR: Database error: 'Query' object has no attribute 'cunt'
+2026-02-18 20:41:40,757 ERROR: Database error: 'Query' object has no attribute 'fliter'
+2026-02-18 20:42:34,921 ERROR: Database error: 'Query' object has no attribute 'fliter'
+2026-02-18 20:43:28,053 ERROR: Database error: 'Query' object has no attribute 'fliter'
+2026-02-18 20:59:16,967 ERROR: Database error: 'Query' object has no attribute 'fliter'
+2026-02-18 21:00:23,666 ERROR: Database error: 'Query' object has no attribute 'fliter'
+2026-02-19 14:11:42,089 ERROR: Database error: 401: Invalid authentication credentials
+2026-02-19 16:06:01,768 ERROR: Error in /admin/analytics: type object 'URLCheck' has no attribute 'created_at'
+2026-02-19 16:06:02,035 ERROR: Database error: 500: Failed to fetch analytics.
+2026-02-22 16:50:30,782 ERROR: Database error: 401: Invalid authentication credentials
+2026-02-22 16:56:51,914 ERROR: Database error: 401: Invalid authentication credentials
+2026-02-22 16:59:34,734 ERROR: Database error: 401: Invalid authentication credentials
+2026-02-22 19:37:22,869 ERROR: Database error: 401: Invalid authentication credentials
+2026-02-22 19:37:26,391 ERROR: Database error: 401: Invalid authentication credentials
+2026-02-22 19:37:51,887 ERROR: Database error: 401: Invalid authentication credentials

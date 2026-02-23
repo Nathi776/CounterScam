@@ -1,0 +1,9 @@
+text,label
+"Your account has been locked. Click to verify.",phishing
+"Meeting today at 2pm.",safe
+"http://secure-login.bankverify.com",phishing
+"https://yourbank.com/portal",safe
+"Urgent action required! Update your details.",phishing
+"Weekly update from your company.",safe
+"Dear customer, please verify your payment info.",phishing
+"Your order has shipped.",safe
