@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "d97e1846-5a0b-4dab-9198-41b503062684"
+      }
+    },
+    "android": {
+      "package": "com.nathi2001.counterscam"
+    }
+  }
+}

@@ -11,3 +11,17 @@ node_modules/
 # Python cache
 __pycache__/
 *.pyc
+
+# logs
+logs/
+Backend/logs/
+*.log
+
+# local config
+.env
+
+# databases
+*.db
+
+# ML artifacts
+*.pkl

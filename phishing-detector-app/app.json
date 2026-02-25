@@ -16,6 +16,7 @@
       "supportsTablet": true
     },
     "android": {
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -30,6 +31,10 @@
       "eas": {
         "projectId": "448830b1-f335-4116-9f83-906b3861e5cc"
       }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/448830b1-f335-4116-9f83-906b3861e5cc"
     }
   }
 }
