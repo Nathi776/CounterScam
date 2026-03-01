@@ -17,23 +17,20 @@ TRUSTED_DOMAINS = [
 ]
 
 
+from urllib.parse import urlparse
+
 def extract_domain(url: str) -> str:
     try:
+        if "://" not in url:
+            url = "http://" + url
+
         parsed = urlparse(url)
-
-        domain = parsed.netloc
-
-        
-        if not domain:
-            domain = parsed.path
-
-        domain = domain.lower()
+        domain = parsed.netloc.lower()
 
         if domain.startswith("www."):
             domain = domain[4:]
 
         return domain
-
     except Exception as e:
         logger.warning(f"Error parsing URL: {str(e)}")
         return ""

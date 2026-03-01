@@ -6,8 +6,6 @@ import os
 import socket
 
 from database import SessionLocal, URLCheck, MessageCheck, ReportContent, init_db
-from ml.model import detect_with_ml
-from ml.rule_based import detect_phishing_url_rule_based, detect_scam_message_rule_based
 from detection.risk_engine import calculate_risk_score
 from detection.message_risk_engine import calculate_message_risk_score
 from detection.fraud_monitor import FraudMonitor
@@ -51,18 +49,17 @@ app.add_middleware(
 
 socket.setdefaulttimeout(5.0)
 
-# Load ML model and vectorizer
+# Load ML pipeline (vectorizer + model together)
 BASE_DIR = os.path.dirname(__file__)
 try:
-    phishing_model = joblib.load(os.path.join(BASE_DIR, 'phishing_model.pkl'))
-    vectorizer = joblib.load(os.path.join(BASE_DIR, 'vectorizer.pkl'))
-    logger.info("ML model and vectorizer loaded successfully.")
+    url_pipe = joblib.load(os.path.join(BASE_DIR, "url_pipeline.pkl"))
+    msg_pipe = joblib.load(os.path.join(BASE_DIR, "message_pipeline.pkl"))
+    logger.info("URL + Message ML pipeline loaded successfully.")
 except Exception as e:
-    logger.error(f"Failed to load ML model/vectorizer: {e}")
+    logger.error(f"Failed to load ML pipeline: {e}")
     raise RuntimeError("Model loading failed.")
 
-
-fraud_monitor = FraudMonitor(vectorizer, phishing_model)
+fraud_monitor = FraudMonitor(msg_pipe)
 
 # Pydantic schemas
 class URLRequest(BaseModel):
@@ -100,8 +97,7 @@ async def check_url(request: URLRequest, db=Depends(get_db)):
 
     result = calculate_risk_score(
         request.url,
-        vectorizer,
-        phishing_model
+        url_pipe
     )
 
     flagged = result["verdict"] in ["phishing", "suspicious"]
@@ -133,8 +129,7 @@ async def check_message(request: MessageRequest, db=Depends(get_db)):
 
     result = calculate_message_risk_score(
         request.message,
-        vectorizer,
-        phishing_model
+        msg_pipe, url_pipe
     )
 
     flagged = result["verdict"] in ["phishing", "suspicious"]

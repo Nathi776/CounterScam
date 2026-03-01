@@ -1,30 +1,38 @@
-from urllib.parse import urlparse
-import whois
-import joblib
 from datetime import datetime, timezone
-from typing import Dict
+import socket
+import whois
 
-
-from ml.model import detect_with_ml
 from ml.rule_based import has_typosquatting, BLACKLIST_DOMAINS
 from detection.domain_utils import extract_domain, is_trusted_domain
 
-def calculate_risk_score(url: str, vectorizer, model):
+socket.setdefaulttimeout(5.0)
+
+GOV_TLDS = [".gov", ".gov.za", ".ac.za", ".mil", ".edu"]
+
+
+def _ml_phishing_probability(pipe, text: str) -> float:
+    """
+    Returns phishing probability in [0, 1] using a sklearn Pipeline:
+    tfidf + classifier with predict_proba.
+    """
+    proba = pipe.predict_proba([text])[0][1]
+    return float(proba)
+
+
+def calculate_risk_score(url: str, url_pipe):
     score = 0
     reasons = []
 
     domain = extract_domain(url)
 
-    # ✅ 1. TRUSTED DOMAIN → Immediate Safe Verdict
+    # 1) TRUSTED DOMAIN → (keep it safe, but not always 0)
+    # NOTE: Returning 0 makes everything look "too safe".
+    # We'll still mark safe but allow other signals to add minimal risk if needed.
     if is_trusted_domain(domain):
-        return {
-            "risk_score": 0,
-            "verdict": "safe",
-            "confidence": 0.99,
-            "reasons": [f"Domain '{domain}' is on trusted list"]
-        }
+        score -= 30
+        reasons.append(f"Domain '{domain}' is in the trusted list (reduce risk)")
 
-    # ✅ 2. BLACKLISTED? → High Risk
+    # 2) BLACKLISTED → high risk immediately
     if domain in BLACKLIST_DOMAINS:
         return {
             "risk_score": 100,
@@ -33,17 +41,17 @@ def calculate_risk_score(url: str, vectorizer, model):
             "reasons": [f"Domain '{domain}' is blacklisted"]
         }
 
-    # ✅ 3. Check for Typosquatting
+    # 3) Typosquatting
     if has_typosquatting(domain):
         score += 60
         reasons.append(f"Domain '{domain}' suspected of typo-squatting")
 
-    # ✅ 4. URL Scheme & Structure
-    if not url.lower().startswith(('http://', 'https://')):
+    # 4) Scheme
+    if not url.lower().startswith(("http://", "https://")):
         score += 50
         reasons.append("URL does not use http:// or https://")
 
-    # ✅ 5. Domain Age (WHOIS)
+    # 5) WHOIS domain age
     try:
         domain_info = whois.whois(domain)
         creation_date = domain_info.creation_date
@@ -54,7 +62,7 @@ def calculate_risk_score(url: str, vectorizer, model):
             raise ValueError("No creation date")
 
         # Normalize datetime
-        if creation_date.tzinfo:
+        if getattr(creation_date, "tzinfo", None):
             now = datetime.now(timezone.utc)
         else:
             now = datetime.now()
@@ -68,43 +76,56 @@ def calculate_risk_score(url: str, vectorizer, model):
         elif age_in_days < 365:
             score += 10
             reasons.append("Domain registered less than a year ago")
-    except Exception as e:
-        print(f"WHOIS lookup failed for {domain}: {e}")
 
-        # Only penalize if NOT a known trustworthy TLD
-        GOV_TLDS = ['.gov', '.gov.za', '.ac.za', '.mil', '.edu']
+    except Exception as e:
+        # don't crash; use a small penalty for unknown age
         if any(domain.endswith(tld) for tld in GOV_TLDS):
-            # Government/education domains often hide WHOIS → don't punish
-            reasons.append("Domain is governmental (.gov.za) – WHOIS private by policy")
+            reasons.append("Domain is governmental/education – WHOIS may be private by policy")
         else:
             score += 20
             reasons.append("Domain age could not be verified (private/unknown)")
 
-    # ✅ 6. ML Prediction
+    # 6) ML probability (Pipeline)
     try:
-        ml_pred = detect_with_ml(url, vectorizer, model)
-        is_phishing = (ml_pred == 1) or (str(ml_pred).lower() in ["phishing", "scam", "malicious"])
+        p = _ml_phishing_probability(url_pipe, url)
+        ml_score = int(round(p * 100))
 
-        if is_phishing:
-            score += 40
-            reasons.append("ML model detected phishing patterns")
+        # Convert ML probability into additive score
+        # (keeps scoring stable + easy to tune)
+        if ml_score >= 85:
+            score += 55
+            reasons.append(f"ML model strongly indicates phishing (p={p:.2f})")
+        elif ml_score >= 60:
+            score += 35
+            reasons.append(f"ML model indicates suspicious patterns (p={p:.2f})")
+        elif ml_score >= 40:
+            score += 15
+            reasons.append(f"ML model sees mild risk (p={p:.2f})")
+        else:
+            reasons.append(f"ML model sees low risk (p={p:.2f})")
+
     except Exception as e:
-        print(f"ML error: {e}")
+        # IMPORTANT: don't silently ignore ML failure
+        score += 10
+        reasons.append(f"ML check unavailable (model/vectorizer issue): {e}")
 
-    # ✅ Final Verdict
+    # Clamp score
+    score = max(0, min(score, 100))
+
+    # Final verdict
     if score >= 70:
         verdict = "phishing"
         confidence = min(score / 100, 0.99)
     elif score >= 40:
         verdict = "suspicious"
-        confidence = score / 100
+        confidence = min(score / 100, 0.95)
     else:
         verdict = "safe"
-        confidence = 1 - (score / 100)
+        confidence = max(0.60, 1 - (score / 100))
 
     return {
         "risk_score": score,
         "verdict": verdict,
         "confidence": confidence,
-        "reasons": reasons
+        "reasons": reasons if reasons else ["No phishing indicators detected"]
     }

@@ -34,7 +34,7 @@ export default function MainMenuScreen({ navigation }) {
       <MenuButton
         title="Scan a Link"
         subtitle="Check a URL for phishing patterns and risky domains."
-        onPress={() => navigation.navigate("Home")}
+        onPress={() => navigation.navigate("UrlScan")}
       />
 
       <MenuButton
